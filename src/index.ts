@@ -76,7 +76,9 @@ export default {
           });
         }
         const agent = new RitualAgent(env);
-        const response = await agent.chat(body.message, body.history);
+        await agent.loadState();
+        const response = await agent.chat(body);
+        ctx.waitUntil(agent.saveState());
         return new Response(JSON.stringify(response, null, 2), { headers: corsHeaders });
       } catch (err) {
         return new Response(JSON.stringify({
@@ -89,7 +91,9 @@ export default {
     if (url.pathname === '/monitor' && request.method === 'POST') {
       try {
         const agent = new RitualAgent(env);
+        await agent.loadState();
         const { snapshot, alerts, summary } = await agent.runMonitorCycle();
+        ctx.waitUntil(agent.saveState());
         return new Response(JSON.stringify({
           snapshot,
           alerts,
@@ -107,6 +111,7 @@ export default {
     if (url.pathname === '/stats') {
       try {
         const agent = new RitualAgent(env);
+        await agent.loadState();
         const stats = agent.getStats();
         return new Response(JSON.stringify({
           stats,
@@ -122,7 +127,9 @@ export default {
     if (url.pathname === '/run' && request.method === 'POST') {
       try {
         const agent = new RitualAgent(env);
+        await agent.loadState();
         const { action, result } = await agent.runAutonomousCycle();
+        ctx.waitUntil(agent.saveState());
         return new Response(JSON.stringify({
           action, result,
           timestamp: new Date().toISOString(),
@@ -144,7 +151,9 @@ export default {
 async function runMonitorCycle(env: Env): Promise<void> {
   try {
     const agent = new RitualAgent(env);
+    await agent.loadState();
     const { snapshot, alerts, summary } = await agent.runMonitorCycle();
+    await agent.saveState();
     console.log(`[Ritual Agent] Block #${snapshot.blockNumber}, ${alerts.length} alerts`);
     if (alerts.length > 0) {
       for (const alert of alerts) {

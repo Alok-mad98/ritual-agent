@@ -8,8 +8,11 @@
     "build": "tsc",
     "dev:worker": "wrangler dev",
     "deploy:worker": "wrangler deploy",
+    "setup:secrets": "tsx scripts/setup-secrets.ts",
     "dev:vps": "tsx src/vps/runner.ts",
     "deploy:sovereign": "tsx scripts/deploy-sovereign.ts",
+    "deploy:chat-payment": "tsx scripts/deploy-chat-payment.ts",
+    "compile:contracts": "tsx scripts/compile-contracts.ts",
     "check-wallet": "tsx scripts/check-wallet.ts",
     "deposit": "tsx scripts/deposit.ts",
     "typecheck": "tsc --noEmit"
@@ -23,6 +26,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240614.0",
     "@types/node": "^20.0.0",
+    "solc": "^0.8.28",
     "tsx": "^4.0.0",
     "typescript": "^5.5.0",
     "wrangler": "^4.0.0"

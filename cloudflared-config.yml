@@ -1,0 +1,14 @@
+# Cloudflare Tunnel configuration
+# Copy to ~/.cloudflared/config.yml after installing cloudflared
+# Replace <your-domain> and <your-tunnel-id>
+
+tunnel: <your-tunnel-id>
+credentials-file: /root/.cloudflared/<your-tunnel-id>.json
+
+ingress:
+  - hostname: api.yourdomain.com
+    service: http://localhost:3000
+  - service: http_status:404
+
+# Log settings
+logfile: /var/log/cloudflared/cloudflared.log

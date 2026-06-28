@@ -11,7 +11,8 @@
     "RITUAL_CHAIN_ID": "1979",
     "GLM_MODEL": "@cf/zai-org/glm-5.2",
     "SOVEREIGN_FACTORY": "0x9dC4C054e53bCc4Ce0A0Ff09E890A7a8e817f304",
-    "RITUAL_WALLET": "0x532F0dF0896F353d8C3DD8cc134e8129DA2a3948"
+    "RITUAL_WALLET": "0x532F0dF0896F353d8C3DD8cc134e8129DA2a3948",
+    "CHAT_PAYMENT_ADDRESS": "0x6c4b1131d691a04c39f37ede5834eebde39eb009"
   },
   "secrets": [
     "PRIVATE_KEY",
@@ -23,6 +24,15 @@
   "triggers": {
     "crons": ["*/5 * * * *"]
   },
+  // Optional: add a KV namespace for persistent agent state across Worker restarts.
+  // Create it first: npx wrangler kv namespace create "AGENT_STATE"
+  // Then uncomment the section below and paste the namespace ID.
+  // "kv_namespaces": [
+  //   {
+  //     "binding": "AGENT_STATE",
+  //     "id": "your-kv-namespace-id"
+  //   }
+  // ],
   "observability": {
     "enabled": true
   }

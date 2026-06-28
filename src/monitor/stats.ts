@@ -152,4 +152,44 @@ export class StatsTracker {
       largestBlock: s.largestBlock,
     };
   }
+
+  exportSnapshot(): Record<string, unknown> {
+    const s = this.stats;
+    return {
+      totalBlocksMonitored: s.totalBlocksMonitored,
+      totalTxsMonitored: s.totalTxsMonitored,
+      highestValueTx: s.highestValueTx,
+      highestGasTx: s.highestGasTx,
+      largestBlock: s.largestBlock,
+      totalValueTransferred: s.totalValueTransferred,
+      avgGasPerBlock: s.avgGasPerBlock,
+      failedTxCount: s.failedTxCount,
+      successRate: s.successRate,
+      uniqueAddresses: Array.from(s.uniqueAddresses),
+      contractDeployments: s.contractDeployments,
+      startTime: s.startTime,
+      lastUpdate: s.lastUpdate,
+    };
+  }
+
+  importSnapshot(snapshot: Record<string, unknown>): void {
+    const s = this.stats;
+    s.totalBlocksMonitored = typeof snapshot.totalBlocksMonitored === 'number' ? snapshot.totalBlocksMonitored : s.totalBlocksMonitored;
+    s.totalTxsMonitored = typeof snapshot.totalTxsMonitored === 'number' ? snapshot.totalTxsMonitored : s.totalTxsMonitored;
+    s.highestValueTx = snapshot.highestValueTx as TxInfo | null ?? s.highestValueTx;
+    s.highestGasTx = snapshot.highestGasTx as TxInfo | null ?? s.highestGasTx;
+    s.largestBlock = snapshot.largestBlock as BlockInfo | null ?? s.largestBlock;
+    s.totalValueTransferred = typeof snapshot.totalValueTransferred === 'string' ? snapshot.totalValueTransferred : s.totalValueTransferred;
+    s.avgGasPerBlock = typeof snapshot.avgGasPerBlock === 'string' ? snapshot.avgGasPerBlock : s.avgGasPerBlock;
+    s.failedTxCount = typeof snapshot.failedTxCount === 'number' ? snapshot.failedTxCount : s.failedTxCount;
+    s.successRate = typeof snapshot.successRate === 'number' ? snapshot.successRate : s.successRate;
+    s.contractDeployments = typeof snapshot.contractDeployments === 'number' ? snapshot.contractDeployments : s.contractDeployments;
+    s.startTime = typeof snapshot.startTime === 'number' ? snapshot.startTime : s.startTime;
+    s.lastUpdate = typeof snapshot.lastUpdate === 'number' ? snapshot.lastUpdate : s.lastUpdate;
+
+    if (Array.isArray(snapshot.uniqueAddresses)) {
+      s.uniqueAddresses = new Set(snapshot.uniqueAddresses as string[]);
+    }
+  }
 }
+

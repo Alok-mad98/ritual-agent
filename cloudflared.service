@@ -1,0 +1,17 @@
+[Unit]
+Description=cloudflared tunnel for Ritual Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=root
+Group=root
+ExecStart=/usr/bin/cloudflared tunnel --config /root/.cloudflared/config.yml run
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/cloudflared/cloudflared.log
+StandardError=append:/var/log/cloudflared/cloudflared.log
+
+[Install]
+WantedBy=multi-user.target

@@ -26,6 +26,7 @@ async function main(): Promise<void> {
     CLOUDFLARE_API_KEY: process.env.CLOUDFLARE_API_KEY || process.env.cloud_flare_api_key || '',
     TINYFISH_API_KEY: process.env.TINYFISH_API_KEY || process.env.tiny_fish_api_key || '',
     FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY || process.env.fire_claw_api_key || '',
+    CHAT_PAYMENT_ADDRESS: process.env.CHAT_PAYMENT_ADDRESS as `0x${string}` | undefined,
     SOVEREIGN_FACTORY: '0x9dC4C054e53bCc4Ce0A0Ff09E890A7a8e817f304' as const,
     RITUAL_WALLET: '0x532F0dF0896F353d8C3DD8cc134e8129DA2a3948' as const,
   };
@@ -150,7 +151,7 @@ async function main(): Promise<void> {
           return;
         }
         console.log(`[Chat] ${chatReq.message.slice(0, 100)}`);
-        const response = await agent.chat(chatReq.message, chatReq.history);
+        const response = await agent.chat(chatReq);
         console.log(`[Chat] Reply sent (${response.reply.length} chars)`);
         sendJson(res, response);
       } catch (err) {

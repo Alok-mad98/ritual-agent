@@ -1,0 +1,19 @@
+[Unit]
+Description=Ritual Agent Backend
+After=network.target
+
+[Service]
+Type=simple
+User=ritual
+WorkingDirectory=/opt/ritual-agent
+ExecStart=/usr/bin/npx tsx src/vps/runner.ts
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/ritual-agent/out.log
+StandardError=append:/var/log/ritual-agent/error.log
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+EnvironmentFile=/opt/ritual-agent/.env
+
+[Install]
+WantedBy=multi-user.target

@@ -8,10 +8,11 @@ import { StatsTracker } from './monitor/stats.js';
 import { ExplorerScraper } from './monitor/explorer.js';
 import { TinyFishClient } from './tools/tinyfish.js';
 import { FireCrawlClient } from './tools/firecrawl.js';
+import { ChatPaymentManager, hashQuestion } from './payment/chat-payment.js';
 import { RITUAL_EXPERT_SYSTEM_PROMPT, getConfig } from './config.js';
 import type {
-  AgentAction, AgentState, ChatMessage, ChatResponse, ChainSnapshot,
-  Env, SearchResult, Alert,
+  AgentAction, AgentState, ChatMessage, ChatResponse, ChatRequest, ChainSnapshot,
+  Env, SearchResult, Alert, Address, Hex,
 } from './types.js';
 
 export class RitualAgent {
@@ -24,6 +25,8 @@ export class RitualAgent {
   private explorer: ExplorerScraper;
   private tinyfish: TinyFishClient | null;
   private firecrawl: FireCrawlClient | null;
+  private kv: KVNamespace | null;
+  private paymentManager: ChatPaymentManager | null;
   private state: AgentState;
   private config: ReturnType<typeof getConfig>;
 
@@ -42,6 +45,13 @@ export class RitualAgent {
       : null;
     this.firecrawl = this.config.firecrawlApiKey
       ? new FireCrawlClient(this.config.firecrawlApiKey)
+      : null;
+
+    this.kv = (env as Partial<Env>).AGENT_STATE || null;
+
+    const paymentAddress = (env as Partial<Env>).CHAT_PAYMENT_ADDRESS;
+    this.paymentManager = paymentAddress
+      ? new ChatPaymentManager(this.clients, paymentAddress)
       : null;
 
     this.state = {
@@ -96,7 +106,64 @@ export class RitualAgent {
     return { snapshot, alerts, statsText };
   }
 
-  async chat(message: string, history?: ChatMessage[]): Promise<ChatResponse> {
+  async chat(request: ChatRequest): Promise<ChatResponse> {
+    const { message, history } = request;
+    let paymentTxHash: string | undefined;
+
+    // Payment verification / relayer
+    if (this.paymentManager) {
+      const questionHash = hashQuestion(message);
+
+      // Direct payment: frontend already submitted payAndAsk tx
+      if (request.txHash) {
+        const direct = await this.paymentManager.verifyDirectPayment(
+          request.txHash as Hex,
+          questionHash,
+        );
+        if (!direct.valid) {
+          throw new Error(`Payment verification failed: ${direct.error}`);
+        }
+        paymentTxHash = request.txHash;
+      }
+      // Session-key payment: backend acts as relayer
+      else if (
+        request.questionHash &&
+        request.fee &&
+        request.nonce &&
+        request.payer &&
+        request.sessionKey &&
+        request.sessionSignature
+      ) {
+        const payload = {
+          questionHash: request.questionHash as Hex,
+          fee: BigInt(request.fee),
+          nonce: BigInt(request.nonce),
+          payer: request.payer as Address,
+          sessionKey: request.sessionKey as Address,
+          sessionSignature: request.sessionSignature as Hex,
+        };
+
+        // Off-chain signature check before spending gas
+        const sigValid = await this.paymentManager.verifySessionSignature(payload);
+        if (!sigValid) {
+          throw new Error('Invalid session key signature');
+        }
+
+        // Check if already paid (idempotent)
+        const alreadyPaid = await this.paymentManager.isQuestionPaid(payload.questionHash);
+        if (!alreadyPaid) {
+          const result = await this.paymentManager.submitSessionPayment(payload);
+          paymentTxHash = result.txHash;
+        } else {
+          paymentTxHash = 'already-paid';
+        }
+      }
+      // No payment provided
+      else {
+        throw new Error('Payment required: provide txHash (direct) or session-key signed payload (advanced)');
+      }
+    }
+
     const sources: { title: string; url: string }[] = [];
     let contextData = '';
 
@@ -168,6 +235,7 @@ export class RitualAgent {
 
     return {
       reply: llmResponse.text,
+      txHash: paymentTxHash,
       sources: sources.length > 0 ? sources : undefined,
       chainData: this.state.monitor.snapshot || undefined,
       timestamp: new Date().toISOString(),
@@ -371,5 +439,53 @@ export class RitualAgent {
 
   getSnapshot(): ChainSnapshot | null {
     return this.state.monitor.snapshot;
+  }
+
+  async loadState(): Promise<void> {
+    if (!this.kv) return;
+    try {
+      const stored = await this.kv.get('agent-state');
+      if (!stored) return;
+      const parsed = JSON.parse(stored) as {
+        state?: Partial<AgentState>;
+        stats?: Record<string, unknown>;
+      };
+
+      if (parsed.state) {
+        this.state = {
+          ...this.state,
+          ...parsed.state,
+          walletBalance: typeof parsed.state.walletBalance === 'string'
+            ? BigInt(parsed.state.walletBalance)
+            : this.state.walletBalance,
+          ritualWalletBalance: typeof parsed.state.ritualWalletBalance === 'string'
+            ? BigInt(parsed.state.ritualWalletBalance)
+            : this.state.ritualWalletBalance,
+        };
+      }
+
+      if (parsed.stats) {
+        this.stats.importSnapshot(parsed.stats);
+      }
+    } catch (err) {
+      console.error('[Agent] Failed to load state from KV:', err);
+    }
+  }
+
+  async saveState(): Promise<void> {
+    if (!this.kv) return;
+    try {
+      const payload = {
+        state: {
+          ...this.state,
+          walletBalance: this.state.walletBalance.toString(),
+          ritualWalletBalance: this.state.ritualWalletBalance.toString(),
+        },
+        stats: this.stats.exportSnapshot(),
+      };
+      await this.kv.put('agent-state', JSON.stringify(payload));
+    } catch (err) {
+      console.error('[Agent] Failed to save state to KV:', err);
+    }
   }
 }

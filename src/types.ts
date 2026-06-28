@@ -17,10 +17,20 @@ export interface ChatRequest {
   message: string;
   history?: ChatMessage[];
   sessionId?: string;
+  // Payment proof options
+  txHash?: string;                          // direct payAndAsk tx hash
+  // session-key payment (advanced path)
+  questionHash?: string;
+  fee?: string;
+  nonce?: string;
+  payer?: string;
+  sessionKey?: string;
+  sessionSignature?: string;
 }
 
 export interface ChatResponse {
   reply: string;
+  txHash?: string;
   sources?: { title: string; url: string }[];
   chainData?: ChainSnapshot;
   timestamp: string;
@@ -147,6 +157,7 @@ export interface Env {
   GLM_MODEL: string;
   SOVEREIGN_FACTORY: Address;
   RITUAL_WALLET: Address;
+  CHAT_PAYMENT_ADDRESS?: Address;
   AGENT_STATE?: KVNamespace;
 }
 
