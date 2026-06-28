@@ -1,0 +1,30 @@
+{
+  "name": "ritual-agent",
+  "version": "1.0.0",
+  "description": "Autonomous AI agent on Ritual Chain powered by GLM-5.2 via Cloudflare Workers AI",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev:worker": "wrangler dev",
+    "deploy:worker": "wrangler deploy",
+    "dev:vps": "tsx src/vps/runner.ts",
+    "deploy:sovereign": "tsx scripts/deploy-sovereign.ts",
+    "check-wallet": "tsx scripts/check-wallet.ts",
+    "deposit": "tsx scripts/deposit.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "agents-sdk": "^1.0.0",
+    "viem": "^2.21.0",
+    "eciesjs": "^0.4.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240614.0",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.5.0",
+    "wrangler": "^4.0.0"
+  }
+}
