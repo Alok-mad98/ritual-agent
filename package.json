@@ -14,6 +14,7 @@
     "deploy:chat-payment": "tsx scripts/deploy-chat-payment.ts",
     "compile:contracts": "tsx scripts/compile-contracts.ts",
     "check-wallet": "tsx scripts/check-wallet.ts",
+    "test:chat-direct": "tsx scripts/test-chat-direct.ts",
     "deposit": "tsx scripts/deposit.ts",
     "typecheck": "tsc --noEmit"
   },

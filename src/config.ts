@@ -35,6 +35,7 @@ export function getConfig(env: Record<string, string | undefined>) {
     firecrawlApiKey: env.FIRECRAWL_API_KEY || env.fire_claw_api_key || '',
     sovereignFactory: env.SOVEREIGN_FACTORY || '0x9dC4C054e53bCc4Ce0A0Ff09E890A7a8e817f304' as Address,
     ritualWallet: env.RITUAL_WALLET || '0x532F0dF0896F353d8C3DD8cc134e8129DA2a3948' as Address,
+    chatPaymentAddress: env.CHAT_PAYMENT_ADDRESS || '0x6c4b1131d691a04c39f37ede5834eebde39eb009' as Address,
     privateKey: env.PRIVATE_KEY || env.private_key || '',
   };
 }

@@ -86,9 +86,20 @@ export class LLMClient {
       max_tokens: options?.maxTokens ?? 1024,
     } as Record<string, unknown>);
 
-    const text = typeof response === 'string'
-      ? response
-      : (response as { response?: string }).response || '';
+    let text = '';
+    if (typeof response === 'string') {
+      text = response;
+    } else {
+      const r = response as {
+        response?: string;
+        content?: string;
+        reasoning_content?: string;
+        choices?: Array<{ message?: { content?: string; reasoning_content?: string } }>;
+      };
+      const choiceMsg = r.choices?.[0]?.message;
+      text = choiceMsg?.content || choiceMsg?.reasoning_content ||
+             r.response || r.content || r.reasoning_content || '';
+    }
 
     return { text, raw: response };
   }
@@ -124,11 +135,12 @@ export class LLMClient {
     }
 
     const data = await resp.json() as {
-      choices?: Array<{ message?: { content?: string } }>;
+      choices?: Array<{ message?: { content?: string; reasoning_content?: string } }>;
       usage?: { prompt_tokens?: number; completion_tokens?: number };
     };
 
-    const text = data.choices?.[0]?.message?.content || '';
+    const message = data.choices?.[0]?.message;
+    const text = message?.content || message?.reasoning_content || '';
     return {
       text,
       usage: {
